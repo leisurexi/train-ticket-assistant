@@ -8,11 +8,6 @@ interface DifyConfig {
   appId: string;
 }
 
-interface DifyMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 interface DifyStreamResponse {
   event: string;
   task_id: string;
