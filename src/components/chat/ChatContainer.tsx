@@ -9,10 +9,14 @@ import { ChatInput } from "./ChatInput";
 import { WelcomeMessage } from "./WelcomeMessage";
 import { QuickActions } from "./QuickActions";
 
+interface ChatContainerProps {
+  sessionId?: string;
+}
+
 /**
  * 聊天容器组件 - 管理整个聊天界面的状态和交互
  */
-export function ChatContainer() {
+export function ChatContainer({ sessionId }: ChatContainerProps = {}) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const scrollAreaRef = useRef<HTMLDivElement>(null);

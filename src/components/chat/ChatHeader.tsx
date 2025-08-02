@@ -23,7 +23,7 @@ export function ChatHeader() {
       {/* 背景装饰 */}
       <div className="absolute inset-0 from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-xl" />
 
-      <Card className="relative mx-4 mt-4 mb-2 p-6 bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 group">
+      <Card className="relative mx-4 mt-4 mb-2 p-4 lg:p-6 bg-gradient-to-br from-background/95 to-background/80 backdrop-blur-sm border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 group">
         <div className="flex items-start gap-4">
           {/* 图标区域 */}
           <div className="relative group-hover:scale-105 transition-transform duration-300">
