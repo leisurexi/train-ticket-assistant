@@ -132,6 +132,13 @@
     }
   }
 
+  /* PC端布局优化 */
+  @media (min-width: 1024px) {
+    body {
+      background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)/0.3) 100%);
+    }
+  }
+
   /* 自定义滚动条 */
   ::-webkit-scrollbar {
     width: 6px;

@@ -30,7 +30,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       )}
       
       <div className={cn(
-        "flex flex-col gap-1 max-w-[85%] sm:max-w-[70%]",
+        "flex flex-col gap-1 max-w-[85%] sm:max-w-[70%] lg:max-w-[60%]",
         isUser && "items-end"
       )}>
         <Card className={cn(

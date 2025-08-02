@@ -172,5 +172,5 @@ export function createDifyClient(): DifyClient | null {
  * 检查 Dify 配置是否可用
  */
 export function isDifyConfigured(): boolean {
-  return !!(process.env.DIFY_API_KEY && process.env.DIFY_APP_ID);
+  return !!(process.env.DIFY_API_KEY && process.env.DIFY_BASE_URL);
 }

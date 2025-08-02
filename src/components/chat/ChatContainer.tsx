@@ -144,36 +144,39 @@ export function ChatContainer() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* 头部 */}
-      <ChatHeader />
+      {/* 主容器 - 在大屏幕上居中显示 */}
+      <div className="flex flex-col h-full max-w-4xl mx-auto w-full lg:shadow-2xl lg:bg-background/95 lg:backdrop-blur-sm">
+        {/* 头部 */}
+        <ChatHeader />
 
-      {/* 消息区域 */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 px-0">
-        <div className="min-h-full">
-          {messages.length === 0 ? (
-            <>
-              <WelcomeMessage />
-              <QuickActions
-                onQuickAction={handleSendMessage}
-                disabled={status === 'loading' || status === 'streaming'}
-              />
-            </>
-          ) : (
-            <div className="pb-4">
-              {messages.map((message) => (
-                <ChatMessage key={message.id} message={message} />
-              ))}
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+        {/* 消息区域 */}
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-0">
+          <div className="min-h-full">
+            {messages.length === 0 ? (
+              <>
+                <WelcomeMessage />
+                <QuickActions
+                  onQuickAction={handleSendMessage}
+                  disabled={status === 'loading' || status === 'streaming'}
+                />
+              </>
+            ) : (
+              <div className="pb-4">
+                {messages.map((message) => (
+                  <ChatMessage key={message.id} message={message} />
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
 
-      {/* 输入区域 */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        disabled={status === 'error'}
-        isLoading={status === 'loading' || status === 'streaming'}
-      />
+        {/* 输入区域 */}
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          disabled={status === 'error'}
+          isLoading={status === 'loading' || status === 'streaming'}
+        />
+      </div>
     </div>
   );
 }
