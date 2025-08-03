@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { AuthDebug } from '@/components/debug/AuthDebug';
 import { getSessionDetail } from '@/lib/api';
 import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { Menu, Plus } from 'lucide-react';
@@ -67,7 +66,7 @@ export function AppLayout() {
 
   return (
     <AuthProvider>
-      <div className="flex h-screen bg-background overflow-hidden">
+      <div className="flex h-screen bg-background overflow-hidden safe-area-top">
       {/* 桌面端侧边栏 */}
       <div className={cn(
         "hidden lg:flex transition-all duration-300",
@@ -134,7 +133,7 @@ export function AppLayout() {
 
 
         {/* 聊天容器 */}
-        <div className="flex-1 relative">
+        <div className="flex-1 min-h-0 relative">
           <ChatContainer
             sessionId={currentSessionId}
             initialMessages={sessionMessages}
@@ -142,9 +141,6 @@ export function AppLayout() {
           />
         </div>
       </div>
-
-      {/* 开发环境调试组件 */}
-      <AuthDebug />
       </div>
     </AuthProvider>
   );

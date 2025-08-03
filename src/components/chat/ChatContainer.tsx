@@ -10,6 +10,7 @@ import { WelcomeMessage } from "./WelcomeMessage";
 import { QuickActions } from "./QuickActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { sendChatMessage } from "@/lib/api";
+import { LoginDialog } from "@/components/auth/LoginDialog";
 
 interface ChatContainerProps {
   sessionId?: string;
@@ -29,6 +30,7 @@ export function ChatContainer({
   const [messages, setMessages] = useState<ChatMessageType[]>(initialMessages);
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // 自动滚动到底部
@@ -57,15 +59,22 @@ export function ChatContainer({
     }
   }, [messages]);
 
+  // 监听登录状态变化，登录成功后关闭登录对话框
+  useEffect(() => {
+    if (isLoggedIn && showLoginDialog) {
+      setShowLoginDialog(false);
+    }
+  }, [isLoggedIn, showLoginDialog]);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   // 发送消息处理
   const handleSendMessage = async (content: string) => {
-    // 检查用户是否已登录
+    // 检查用户是否已登录，未登录时弹出登录框
     if (!isLoggedIn || !token) {
-      console.error('用户未登录');
+      setShowLoginDialog(true);
       return;
     }
 
@@ -211,7 +220,7 @@ export function ChatContainer({
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-full bg-background">
       {/* 主容器 - 在大屏幕上居中显示 */}
       <div className="flex flex-col h-full max-w-4xl mx-auto w-full lg:shadow-2xl lg:bg-background/95 lg:backdrop-blur-sm">
         {/* 头部 - 只在没有消息时显示 */}
@@ -257,6 +266,12 @@ export function ChatContainer({
           />
         </div>
       </div>
+
+      {/* 登录对话框 */}
+      <LoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+      />
     </div>
   );
 }

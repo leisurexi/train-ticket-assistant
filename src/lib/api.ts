@@ -195,3 +195,20 @@ export async function deleteSession(sessionId: string) {
     method: 'DELETE',
   });
 }
+
+/**
+ * 获取系统状态
+ */
+export async function getSystemStatus(): Promise<{
+  difyConfigured: boolean;
+  timestamp: string;
+  version: string;
+}> {
+  const response = await fetch('/api/status');
+
+  if (!response.ok) {
+    throw new Error('获取系统状态失败');
+  }
+
+  return response.json();
+}

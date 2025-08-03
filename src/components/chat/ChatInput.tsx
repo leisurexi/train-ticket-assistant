@@ -31,7 +31,7 @@ export function ChatInput({ onSendMessage, disabled = false, isLoading = false }
   };
 
   return (
-    <div className="flex w-full gap-2 p-4 bg-background border-t">
+    <div className="flex w-full gap-2 p-4 bg-background border-t safe-area-bottom sticky bottom-0 z-10">
       <div className="flex-1 relative">
         <Input
           value={message}

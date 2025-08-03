@@ -3,6 +3,7 @@
 import { Card } from "@/components/ui/card";
 import { Train, Sparkles } from "lucide-react";
 import { AIStatus } from "./AIStatus";
+import { getSystemStatus } from "@/lib/api";
 import { useEffect, useState } from "react";
 
 /**
@@ -13,10 +14,9 @@ export function ChatHeader() {
 
   useEffect(() => {
     // 检查 Dify 配置状态
-    fetch('/api/status')
-      .then(res => res.json())
+    getSystemStatus()
       .then(data => setIsUsingDify(data.difyConfigured))
-      .catch(console.error);
+      .catch(err => console.error('检查 Dify 状态失败:', err));
   }, []);
   return (
     <div className="relative">

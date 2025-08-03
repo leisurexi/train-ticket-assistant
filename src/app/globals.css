@@ -132,6 +132,22 @@
     }
   }
 
+  /* 移动端安全区域支持 */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* 移动端视口高度修复 */
+  @supports (-webkit-touch-callout: none) {
+    .h-screen {
+      height: -webkit-fill-available;
+    }
+  }
+
   /* PC端布局优化 */
   @media (min-width: 1024px) {
     body {
