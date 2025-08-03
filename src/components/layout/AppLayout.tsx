@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { ChatContainer } from '@/components/chat/ChatContainer';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthDebug } from '@/components/debug/AuthDebug';
+import { getSessionDetail } from '@/lib/api';
+import { ChatMessage as ChatMessageType } from '@/types/chat';
 import { Menu, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,19 +17,44 @@ import { cn } from '@/lib/utils';
 export function AppLayout() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState<string>('1');
+  const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(undefined);
+  const [sessionMessages, setSessionMessages] = useState<ChatMessageType[]>([]);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
 
   const handleNewChat = () => {
-    // 创建新对话的逻辑
-    const newSessionId = Date.now().toString();
-    setCurrentSessionId(newSessionId);
-    console.log('创建新对话:', newSessionId);
+    // 重置当前会话ID和消息，让服务端自动创建新会话
+    setCurrentSessionId(undefined);
+    setSessionMessages([]);
+    console.log('开始新对话，将由服务端自动创建会话');
   };
 
-  const handleSelectSession = (sessionId: string) => {
-    setCurrentSessionId(sessionId);
-    setIsMobileSidebarOpen(false); // 移动端选择会话后关闭侧边栏
-    console.log('选择会话:', sessionId);
+  const handleSelectSession = async (sessionId: string) => {
+    try {
+      setIsLoadingSession(true);
+      setCurrentSessionId(sessionId);
+      setIsMobileSidebarOpen(false); // 移动端选择会话后关闭侧边栏
+
+      // 获取会话详情
+      const data = await getSessionDetail(sessionId);
+
+      if (data.data?.session) {
+        // 转换消息格式
+        const messages: ChatMessageType[] = data.data.session.messages.map((msg, index) => ({
+          id: `${sessionId}-${index}`,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+
+        setSessionMessages(messages);
+        console.log('加载会话成功:', sessionId, messages.length, '条消息');
+      }
+    } catch (error) {
+      console.error('加载会话失败:', error);
+      // 可以在这里添加错误提示
+    } finally {
+      setIsLoadingSession(false);
+    }
   };
 
   const toggleSidebar = () => {
@@ -37,7 +66,8 @@ export function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <AuthProvider>
+      <div className="flex h-screen bg-background overflow-hidden">
       {/* 桌面端侧边栏 */}
       <div className={cn(
         "hidden lg:flex transition-all duration-300",
@@ -49,6 +79,7 @@ export function AppLayout() {
           onNewChat={handleNewChat}
           onSelectSession={handleSelectSession}
           currentSessionId={currentSessionId}
+          isLoadingSession={isLoadingSession}
         />
       </div>
 
@@ -69,6 +100,7 @@ export function AppLayout() {
           onNewChat={handleNewChat}
           onSelectSession={handleSelectSession}
           currentSessionId={currentSessionId}
+          isLoadingSession={isLoadingSession}
         />
       </div>
 
@@ -103,9 +135,17 @@ export function AppLayout() {
 
         {/* 聊天容器 */}
         <div className="flex-1 relative">
-          <ChatContainer sessionId={currentSessionId} />
+          <ChatContainer
+            sessionId={currentSessionId}
+            initialMessages={sessionMessages}
+            isLoadingSession={isLoadingSession}
+          />
         </div>
       </div>
-    </div>
+
+      {/* 开发环境调试组件 */}
+      <AuthDebug />
+      </div>
+    </AuthProvider>
   );
 }

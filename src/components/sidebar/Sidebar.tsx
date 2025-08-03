@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LoginDialog } from '@/components/auth/LoginDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserSessions } from '@/lib/api';
 import {
   MessageSquare,
   Plus,
@@ -30,6 +33,7 @@ interface SidebarProps {
   onNewChat?: () => void;
   onSelectSession?: (sessionId: string) => void;
   currentSessionId?: string;
+  isLoadingSession?: boolean;
 }
 
 /**
@@ -40,45 +44,50 @@ export function Sidebar({
   onToggle,
   onNewChat,
   onSelectSession,
-  currentSessionId
+  currentSessionId,
+  isLoadingSession = false
 }: SidebarProps) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const { isLoggedIn, user, isLoading, logout } = useAuth();
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
 
-  // 模拟历史会话数据
-  const [sessions] = useState<ChatSession[]>([
-    {
-      id: '1',
-      title: '北京到上海火车票查询',
-      lastMessage: '为您找到了3趟高铁列车...',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30分钟前
-      messageCount: 8
-    },
-    {
-      id: '2', 
-      title: '广州到深圳城际列车',
-      lastMessage: '广深城际列车班次密集...',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2小时前
-      messageCount: 5
-    },
-    {
-      id: '3',
-      title: '杭州到南京火车票',
-      lastMessage: '正在为您查询杭州东到南京南...',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1天前
-      messageCount: 12
+  // 加载用户会话列表
+  useEffect(() => {
+    if (isLoggedIn && !isLoading) {
+      loadSessions();
+    } else {
+      setSessions([]);
     }
-  ]);
+  }, [isLoggedIn, isLoading]);
 
-  const handleLogin = () => {
-    // 模拟登录
-    setIsLoggedIn(true);
-    setUser({ name: '张三', email: 'zhangsan@example.com' });
+  const loadSessions = async () => {
+    try {
+      setSessionsLoading(true);
+      const data = await getUserSessions();
+      if (data.data?.sessions) {
+        const formattedSessions = data.data.sessions.map(session => ({
+          id: session.id,
+          title: session.title,
+          lastMessage: session.lastMessage,
+          timestamp: new Date(session.lastMessageAt),
+          messageCount: session.messageCount
+        }));
+        setSessions(formattedSessions);
+      }
+    } catch (error) {
+      console.error('加载会话列表失败:', error);
+    } finally {
+      setSessionsLoading(false);
+    }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUser(null);
+  const handleLoginClick = () => {
+    setShowLoginDialog(true);
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   const formatTime = (date: Date) => {
@@ -142,15 +151,31 @@ export function Sidebar({
 
           <ScrollArea className="h-full px-2">
             <div className="space-y-1 pb-4">
-              {sessions.map((session) => (
-                <Card
-                  key={session.id}
-                  className={cn(
-                    "p-3 cursor-pointer transition-all duration-200 hover:bg-muted/50",
-                    currentSessionId === session.id && "bg-muted border-primary/50"
-                  )}
-                  onClick={() => onSelectSession?.(session.id)}
-                >
+              {sessionsLoading ? (
+                // 加载状态
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index} className="p-3 animate-pulse">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-3 bg-muted rounded w-full" />
+                      <div className="flex justify-between">
+                        <div className="h-3 bg-muted rounded w-16" />
+                        <div className="h-3 bg-muted rounded w-12" />
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              ) : sessions.length > 0 ? (
+                sessions.map((session) => (
+                  <Card
+                    key={session.id}
+                    className={cn(
+                      "p-3 cursor-pointer transition-all duration-200 hover:bg-muted/50",
+                      currentSessionId === session.id && "bg-muted border-primary/50",
+                      isLoadingSession && currentSessionId === session.id && "opacity-50 cursor-not-allowed"
+                    )}
+                    onClick={() => !isLoadingSession && onSelectSession?.(session.id)}
+                  >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-sm font-medium line-clamp-1">
@@ -175,7 +200,15 @@ export function Sidebar({
                     </div>
                   </div>
                 </Card>
-              ))}
+                ))
+              ) : (
+                // 空状态
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <MessageSquare className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">暂无会话记录</p>
+                  <p className="text-xs text-muted-foreground mt-1">开始新对话来创建会话</p>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -186,7 +219,17 @@ export function Sidebar({
 
       {/* 底部用户区域 */}
       <div className="p-4 border-t border-border">
-        {isLoggedIn && user ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+            {!isCollapsed && (
+              <div className="ml-3 space-y-1">
+                <div className="h-4 bg-muted rounded animate-pulse w-20" />
+                <div className="h-3 bg-muted rounded animate-pulse w-32" />
+              </div>
+            )}
+          </div>
+        ) : isLoggedIn && user ? (
           <div className={cn(
             "flex items-center transition-all duration-200",
             isCollapsed ? "justify-center" : "gap-3"
@@ -229,7 +272,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleLogin}
+                onClick={handleLoginClick}
                 className="h-10 w-10 p-0"
                 title="登录账户"
               >
@@ -237,7 +280,7 @@ export function Sidebar({
               </Button>
             ) : (
               <Button
-                onClick={handleLogin}
+                onClick={handleLoginClick}
                 className="w-full justify-start gap-2"
                 variant="outline"
               >
@@ -248,6 +291,12 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* 登录对话框 */}
+      <LoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+      />
     </div>
   );
 }

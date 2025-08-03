@@ -1,33 +1,91 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createDifyClient, isDifyConfigured } from '@/lib/dify';
+import { authenticateRequest } from '@/lib/auth-middleware';
+import { connectToDatabase } from '@/lib/mongodb';
+import { Session } from '@/models/Session';
+import { isValidObjectId } from '@/lib/mongodb-utils';
 
 /**
  * 聊天API路由 - 处理用户消息并返回流式响应
  */
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    // 验证用户认证
+    const authResult = await authenticateRequest(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.status || 401 }
+      );
+    }
+
+    const user = authResult.user!;
+    const { message, sessionId } = await request.json();
 
     if (!message) {
-      return new Response('消息内容不能为空', { status: 400 });
+      return NextResponse.json(
+        { error: '消息内容不能为空' },
+        { status: 400 }
+      );
+    }
+
+    // 连接数据库
+    await connectToDatabase();
+
+    // 处理会话记录
+    let session;
+
+    if (sessionId && isValidObjectId(sessionId)) {
+      // 尝试查找现有会话
+      session = await Session.findOne({ _id: sessionId, userId: user.id });
+      if (session) {
+        // 添加用户消息到现有会话
+        await session.addMessage('user', message);
+      } else {
+        console.warn('会话不存在或无权访问:', sessionId);
+      }
+    }
+
+    if (!session) {
+      // 创建新会话（createForUser 已经包含了用户消息）
+      session = await (Session as any).createForUser(user.id, message);
+      console.log('创建新会话:', session._id.toString());
     }
 
     // 创建流式响应
     const encoder = new TextEncoder();
+    let assistantResponse = '';
+
     const stream = new ReadableStream({
       async start(controller) {
         try {
+          // 发送会话ID
+          const sessionData = JSON.stringify({
+            sessionId: session._id.toString(),
+            type: 'session'
+          });
+          controller.enqueue(encoder.encode(`data: ${sessionData}\n\n`));
+
           // 检查是否配置了 Dify AI
           if (isDifyConfigured()) {
             const difyClient = createDifyClient();
             if (difyClient) {
               // 使用 Dify AI 进行流式响应
               const stream = difyClient.streamChat(message);
-
               for await (const chunk of stream) {
                 if (chunk) {
-                  const data = JSON.stringify({ content: chunk });
+                  assistantResponse += chunk;
+                  const data = JSON.stringify({ content: chunk, type: 'content' });
                   controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+                }
+              }
+
+              // 保存完整的助手响应到会话（只在流结束时保存一次）
+              if (assistantResponse && assistantResponse.trim().length > 0) {
+                try {
+                  await session.addMessage('assistant', assistantResponse);
+                } catch (error) {
+                  console.error('保存助手响应失败:', error);
                 }
               }
 
@@ -40,16 +98,26 @@ export async function POST(request: NextRequest) {
 
           // 回退到模拟响应
           const response = await generateTrainTicketResponse(message);
+          assistantResponse = response;
 
           // 将响应分块发送，模拟流式输出
           const chunks = splitIntoChunks(response, 10);
 
           for (const chunk of chunks) {
-            const data = JSON.stringify({ content: chunk });
+            const data = JSON.stringify({ content: chunk, type: 'content' });
             controller.enqueue(encoder.encode(`data: ${data}\n\n`));
 
             // 模拟延迟
             await new Promise(resolve => setTimeout(resolve, 50));
+          }
+
+          // 保存完整的助手响应到会话
+          if (assistantResponse && assistantResponse.trim().length > 0) {
+            try {
+              await session.addMessage('assistant', assistantResponse);
+            } catch (error) {
+              console.error('保存助手响应失败:', error);
+            }
           }
 
           // 发送结束信号
@@ -57,8 +125,10 @@ export async function POST(request: NextRequest) {
           controller.close();
         } catch (error) {
           console.error('生成响应时出错:', error);
-          const errorData = JSON.stringify({ 
-            content: '抱歉，处理您的请求时出现了错误。' 
+
+          const errorData = JSON.stringify({
+            content: '抱歉，处理您的请求时出现了错误。',
+            type: 'content'
           });
           controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
@@ -76,7 +146,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('API路由错误:', error);
-    return new Response('服务器内部错误', { status: 500 });
+    return NextResponse.json(
+      { error: '服务器内部错误' },
+      { status: 500 }
+    );
   }
 }
 

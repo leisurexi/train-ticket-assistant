@@ -5,7 +5,6 @@
 interface DifyConfig {
   apiKey: string;
   baseUrl: string;
-  appId: string;
 }
 
 interface DifyStreamResponse {
@@ -54,7 +53,7 @@ export class DifyClient {
           auto_generate_name: false
         }),
       });
-
+      console.log(`Dify API 响应状态: ${response.status} ${response.statusText}`);
       if (!response.ok) {
         throw new Error(`Dify API 请求失败: ${response.status} ${response.statusText}`);
       }
@@ -154,9 +153,8 @@ export class DifyClient {
 export function createDifyClient(): DifyClient | null {
   const apiKey = process.env.DIFY_API_KEY;
   const baseUrl = process.env.DIFY_BASE_URL || 'https://api.dify.ai/v1';
-  const appId = process.env.DIFY_APP_ID;
 
-  if (!apiKey || !appId) {
+  if (!apiKey || !baseUrl) {
     console.warn('Dify 配置不完整，将使用模拟响应');
     return null;
   }
@@ -164,7 +162,6 @@ export function createDifyClient(): DifyClient | null {
   return new DifyClient({
     apiKey,
     baseUrl,
-    appId
   });
 }
 
