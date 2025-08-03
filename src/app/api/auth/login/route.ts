@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
     const name = username.charAt(0).toUpperCase() + username.slice(1);
 
     // 查找或创建用户
-    const user = await (User as any).findOrCreate(email, name);
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({ email, name });
+    }
 
     // 生成 JWT Token
     const token = generateToken({

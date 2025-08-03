@@ -38,7 +38,7 @@ const UserSchema = new Schema<IUser>({
 }, {
   timestamps: true, // 自动添加 createdAt 和 updatedAt
   toJSON: {
-    transform: function(doc, ret) {
+    transform: function(_doc, ret: Record<string, unknown>) {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;

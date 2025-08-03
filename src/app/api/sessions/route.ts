@@ -30,14 +30,22 @@ export async function GET(request: NextRequest) {
       .lean();
 
     // 处理会话数据，添加消息数量和最后消息预览
-    const processedSessions = sessions.map(session => ({
-      id: session._id.toString(),
+    interface SessionDoc {
+      _id: unknown;
+      title: string;
+      lastMessageAt: Date;
+      createdAt: Date;
+      messages?: Array<{ content: string }>;
+    }
+
+    const processedSessions = (sessions as unknown as SessionDoc[]).map(session => ({
+      id: (session._id as { toString(): string }).toString(),
       title: session.title,
       lastMessageAt: session.lastMessageAt,
       createdAt: session.createdAt,
       messageCount: session.messages?.length || 0,
-      lastMessage: session.messages && session.messages.length > 0 
-        ? session.messages[session.messages.length - 1].content.substring(0, 100) + 
+      lastMessage: session.messages && session.messages.length > 0
+        ? session.messages[session.messages.length - 1].content.substring(0, 100) +
           (session.messages[session.messages.length - 1].content.length > 100 ? '...' : '')
         : ''
     }));

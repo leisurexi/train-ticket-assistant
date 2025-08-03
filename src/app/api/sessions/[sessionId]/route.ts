@@ -9,7 +9,7 @@ import { validateObjectIdParam } from '@/lib/mongodb-utils';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     // 验证用户认证
@@ -22,7 +22,7 @@ export async function GET(
     }
 
     const user = authResult.user!;
-    const { sessionId } = params;
+    const { sessionId } = await params;
 
     // 验证 sessionId
     const validation = validateObjectIdParam(sessionId, '会话ID');
@@ -50,7 +50,22 @@ export async function GET(
     }
 
     // 处理消息数据
-    const processedMessages = session.messages?.map(message => ({
+    interface SessionMessage {
+      role: string;
+      content: string;
+      timestamp: Date;
+    }
+
+    const sessionDoc = session as unknown as {
+      _id: string;
+      title: string;
+      createdAt: Date;
+      updatedAt: Date;
+      lastMessageAt: Date;
+      messages: SessionMessage[];
+    };
+
+    const processedMessages = sessionDoc.messages?.map(message => ({
       role: message.role,
       content: message.content,
       timestamp: message.timestamp
@@ -61,11 +76,11 @@ export async function GET(
       message: '获取会话详情成功',
       data: {
         session: {
-          id: session._id.toString(),
-          title: session.title,
-          createdAt: session.createdAt,
-          updatedAt: session.updatedAt,
-          lastMessageAt: session.lastMessageAt,
+          id: sessionDoc._id.toString(),
+          title: sessionDoc.title,
+          createdAt: sessionDoc.createdAt,
+          updatedAt: sessionDoc.updatedAt,
+          lastMessageAt: sessionDoc.lastMessageAt,
           messages: processedMessages,
           messageCount: processedMessages.length
         }
@@ -86,7 +101,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     // 验证用户认证
@@ -99,7 +114,7 @@ export async function PATCH(
     }
 
     const user = authResult.user!;
-    const { sessionId } = params;
+    const { sessionId } = await params;
     const { title } = await request.json();
 
     // 验证 sessionId
@@ -161,7 +176,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     // 验证用户认证
@@ -174,7 +189,7 @@ export async function DELETE(
     }
 
     const user = authResult.user!;
-    const { sessionId } = params;
+    const { sessionId } = await params;
 
     // 验证 sessionId
     const validation = validateObjectIdParam(sessionId, '会话ID');

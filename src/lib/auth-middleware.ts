@@ -37,7 +37,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
     let payload: JWTPayload;
     try {
       payload = verifyToken(token);
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: 'Token 无效或已过期',
@@ -81,7 +81,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
 /**
  * 要求认证的装饰器函数
  */
-export function requireAuth<T extends any[]>(
+export function requireAuth<T extends unknown[]>(
   handler: (request: NextRequest, user: { id: string; email: string; name: string }, ...args: T) => Promise<Response>
 ) {
   return async (request: NextRequest, ...args: T): Promise<Response> => {

@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 if (!JWT_SECRET) {
   throw new Error('请在环境变量中设置 JWT_SECRET');
@@ -19,8 +18,11 @@ export interface JWTPayload {
  * 生成 JWT Token
  */
 export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, JWT_SECRET!, {
-    expiresIn: JWT_EXPIRES_IN,
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET 未配置');
+  }
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: '7d',
   });
 }
 
@@ -28,8 +30,11 @@ export function generateToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string 
  * 验证 JWT Token
  */
 export function verifyToken(token: string): JWTPayload {
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET 未配置');
+  }
   try {
-    return jwt.verify(token, JWT_SECRET!) as JWTPayload;
+    return jwt.verify(token, JWT_SECRET) as JWTPayload;
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       throw new Error('无效的 Token');

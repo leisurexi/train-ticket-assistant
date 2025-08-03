@@ -2,7 +2,7 @@
  * API 请求工具函数
  */
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
@@ -12,7 +12,7 @@ interface ApiResponse<T = any> {
 /**
  * 发送认证请求
  */
-export async function authRequest<T = any>(
+export async function authRequest<T = unknown>(
   url: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {

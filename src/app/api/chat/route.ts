@@ -47,8 +47,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (!session) {
-      // 创建新会话（createForUser 已经包含了用户消息）
-      session = await (Session as any).createForUser(user.id, message);
+      // 创建新会话
+      session = await Session.create({
+        userId: user.id,
+        title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
+        messages: [{
+          role: 'user',
+          content: message,
+          timestamp: new Date()
+        }]
+      });
       console.log('创建新会话:', session._id.toString());
     }
 

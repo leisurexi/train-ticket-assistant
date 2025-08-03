@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Mail, User, Loader2 } from 'lucide-react';
+import { Mail, Loader2 } from 'lucide-react';
 
 interface LoginDialogProps {
   open: boolean;

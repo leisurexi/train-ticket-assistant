@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { verifyToken, JWTPayload } from '@/lib/jwt';
+import { JWTPayload } from '@/lib/jwt';
 
 interface User {
   id: string;
