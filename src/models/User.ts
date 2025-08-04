@@ -47,8 +47,7 @@ const UserSchema = new Schema<IUser>({
   }
 });
 
-// 创建索引
-UserSchema.index({ email: 1 });
+// 创建索引（email 索引已通过 unique: true 自动创建）
 UserSchema.index({ createdAt: -1 });
 
 // 静态方法：根据邮箱查找或创建用户
