@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   train-ticket-assistant:
     image: train-ticket-assistant:latest
